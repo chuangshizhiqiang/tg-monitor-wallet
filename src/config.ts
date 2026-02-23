@@ -3,7 +3,7 @@ dotenv.config();
 
 export const CONFIG = {
   // Telegram
-  BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || process.env.TGBOTTOKEN || '',
+  BOT_TOKEN: (process.env.TELEGRAM_BOT_TOKEN || process.env.TGBOTTOKEN || '').trim(),
   ADMIN_ID: Number(process.env.ADMIN_TELEGRAM_ID || 0),
 
   // API Keys

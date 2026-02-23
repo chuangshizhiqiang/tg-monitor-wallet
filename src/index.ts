@@ -1,9 +1,16 @@
 import { Bot } from 'grammy';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { CONFIG } from './config';
 import { getDb } from './db';
 import { BotContext, userMiddleware } from './bot/middleware';
 import { registerCommands } from './bot/commands';
 import { startWatcher } from './monitor/watcher';
+
+function getProxyUrl(): string | undefined {
+  return process.env.HTTPS_PROXY || process.env.https_proxy
+    || process.env.HTTP_PROXY || process.env.http_proxy
+    || undefined;
+}
 
 async function main() {
   // Validate config
@@ -16,8 +23,22 @@ async function main() {
   getDb();
   console.log('[DB] Database initialized');
 
+  // Configure proxy if available
+  const proxyUrl = getProxyUrl();
+  const botConfig: any = {};
+  if (proxyUrl) {
+    console.log('[Proxy] Using HTTP proxy for Telegram API');
+    const agent = new HttpsProxyAgent(proxyUrl);
+    botConfig.client = {
+      baseFetchConfig: {
+        agent,
+        compress: true,
+      } as any,
+    };
+  }
+
   // Create bot
-  const bot = new Bot<BotContext>(CONFIG.BOT_TOKEN);
+  const bot = new Bot<BotContext>(CONFIG.BOT_TOKEN, botConfig);
 
   // Register middleware
   bot.use(userMiddleware);
@@ -27,15 +48,15 @@ async function main() {
 
   // Set bot commands menu
   await bot.api.setMyCommands([
-    { command: 'start', description: '\u542F\u52A8\u673A\u5668\u4EBA' },
-    { command: 'query', description: '\u67E5\u8BE2\u5730\u5740\u6700\u8FD1\u4EA4\u6613' },
-    { command: 'tx', description: '\u67E5\u8BE2\u6307\u5B9A\u4EA4\u6613\u524D\u540E\u8BB0\u5F55' },
-    { command: 'watch', description: '\u6DFB\u52A0\u5730\u5740\u76D1\u63A7' },
-    { command: 'unwatch', description: '\u79FB\u9664\u5730\u5740\u76D1\u63A7' },
-    { command: 'list', description: '\u67E5\u770B\u76D1\u63A7\u5217\u8868' },
-    { command: 'status', description: '\u67E5\u770B\u8D26\u6237\u72B6\u6001' },
-    { command: 'subscribe', description: '\u67E5\u770B\u8BA2\u9605\u65B9\u6848' },
-    { command: 'help', description: '\u5E2E\u52A9\u4FE1\u606F' },
+    { command: 'start', description: '启动机器人' },
+    { command: 'query', description: '查询地址最近交易' },
+    { command: 'tx', description: '查询指定交易前后记录' },
+    { command: 'watch', description: '添加地址监控' },
+    { command: 'unwatch', description: '移除地址监控' },
+    { command: 'list', description: '查看监控列表' },
+    { command: 'status', description: '查看账户状态' },
+    { command: 'subscribe', description: '查看订阅方案' },
+    { command: 'help', description: '帮助信息' },
   ]);
 
   // Start balance watcher
