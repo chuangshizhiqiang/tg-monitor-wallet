@@ -1,0 +1,27 @@
+# Fly.io configuration for tg-monitor-wallet
+# Docs: https://fly.io/docs/reference/configuration/
+
+app = "tg-monitor-wallet"
+primary_region = "hkg"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  DB_PATH = "/data/wallet_monitor.db"
+
+# Persistent volume for SQLite database
+[mounts]
+  source = "wallet_data"
+  destination = "/data"
+
+# This is a worker-only app (Telegram bot), no HTTP server needed
+# If you want health checks, uncomment and add an HTTP health endpoint
+# [[services]]
+#   internal_port = 8080
+#   protocol = "tcp"
+
+# Resource allocation - minimal for a bot
+[vm]
+  size = "shared-cpu-1x"
+  memory = "256mb"
